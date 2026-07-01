@@ -18,3 +18,5 @@ pillow
 # frontend development
 streamlit
 
+librosa
+resemblyzer
