@@ -20,11 +20,14 @@ def create_teacher(username, password, name):
 
 def teacher_login(username, password):
     response = supabase.table("teachers").select("*").eq("username",username).execute()
+    print("DEBUG response.data:", response.data)
     if response.data:
         teacher = response.data[0]
         if check_pass(password, teacher['password']):
             return teacher
-        return None
+        else:
+            print("DEBUG password check failed")
+    return None
     
 def get_all_students():
     response = supabase.table('students').select("*").execute()
