@@ -11,8 +11,9 @@ from src.components.dialog_add_photo import add_photos_dialog
 import numpy as np
 from src.pipelines.face_pipelines import predict_attendance
 from src.components.dialog_attendance_result import attendance_result_dialog
-
+from src.components.dialog_voice_attendance import voice_attendance_dialog
 from src.database.config import supabase
+from src.database.db import get_attendance_for_teacher
 from datetime import datetime
 
 import pandas as pd
@@ -169,7 +170,7 @@ def teacher_tab_take_attendance():
         
     with c3:
         if st.button('Use  Voice Attendance', type='primary', width='stretch',icon=':material/mic:'):
-            voice_attendance_dialog()
+            voice_attendance_dialog(selected_subject_id)
 
 
 
@@ -220,6 +221,51 @@ def teacher_tab_manage_subjects():
 
 def teacher_tab_attendance_records():
     st.header('Attendance Records')
+
+    teacher_id = st.session_state.teacher_data['teacher_id']
+
+    records = get_attendance_for_teacher(teacher_id)
+
+    if not records:
+        return
+    
+    data = []
+
+    for r in records:
+        ts = r.get('timestamp')
+
+        data.append({
+            "ts_group": ts.split(".")[0] if ts else None,
+            "Time": datetime.fromisoformat(ts).strftime("%Y-%m-%d %I:%M %p") if ts else "N'A",
+            "Subject": r['subjects']['name'],
+            "Subject Code":r['subjects']['subject_code'],
+            "is_present": bool(r.get('is_present', False))
+        })
+
+
+    df = pd.DataFrame(data)
+
+
+
+    summary = (
+        df.groupby(['ts_group', 'Time', 'Subject', 'Subject Code'])
+        .agg(
+            Present_Count = ('is_present', 'sum'),
+            Total_Count =('is_present', 'count')
+        ).reset_index()
+
+    )
+
+    summary['Attendance Stats'] = (
+        "✅ " + summary['Present_Count'].astype(str) + " /"
+        + summary['Total_Count'].astype(str) + ' Students'
+    )
+
+    display_df = ( summary.sort_values(by='ts_group' ,ascending=False)
+                  [['Time', 'Subject', 'Subject Code', 'Attendance Stats']]
+                  )
+    
+    st.dataframe(display_df, width='stretch', hide_index=True)
 
 
 def login_teacher(username, password):
