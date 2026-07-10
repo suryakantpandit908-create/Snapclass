@@ -1,3 +1,7 @@
+
+# frontend development
+streamlit
+
 numpy
 pandas
 
@@ -15,8 +19,6 @@ bcrypt
 segno
 pillow
 
-# frontend development
-streamlit
 
 librosa
 resemblyzer
